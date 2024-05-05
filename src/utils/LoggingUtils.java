@@ -39,4 +39,12 @@ public class LoggingUtils extends ColorsUtils {
     public static void info(final String text) {
         System.out.println(CYAN_BOLD + "[INF] " + RESET + text + RESET);
     }
+
+    public static void alert_high(final String text) {
+        System.out.println(RED_BOLD_BRIGHT + "[ALE] " + RESET + text + RESET);
+    }
+
+    public static void alert_medium(final String text) {
+        System.out.println(YELLOW_BOLD + "[ALE] " + RESET + text + RESET);
+    }
 }

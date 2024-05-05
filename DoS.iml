@@ -7,9 +7,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="jna-5.13.0" level="project" />
-    <orderEntry type="library" name="jna-platform-5.13.0" level="project" />
-    <orderEntry type="library" name="jnetpcap-1.5.r1457-1i" level="project" />
-    <orderEntry type="library" name="super-user-application-0.0.5" level="project" />
+    <orderEntry type="library" name="DoS" level="project" />
+    <orderEntry type="library" name="libs" level="project" />
   </component>
 </module>

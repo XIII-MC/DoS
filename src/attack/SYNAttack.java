@@ -57,7 +57,7 @@ public class SYNAttack extends LoggingUtils {
 
                     final Socket socket = new Socket();
                     socket.connect(new InetSocketAddress(InetAddress.getByName(ip), port), 2500);
-                    Thread.sleep(100);
+                    Thread.sleep(200);
                     socket.close();
 
                 } catch (final IOException | InterruptedException ignored) {}

@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="libs">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/libs/jcifs-1.3.17.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/super-user-application-0.0.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/jna-5.13.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/jna-platform-5.13.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/jnetpcap-1.5.r1457-1i.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
