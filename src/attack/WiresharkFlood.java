@@ -46,7 +46,6 @@ public class WiresharkFlood extends LoggingUtils {
                     new Socket().connect(new InetSocketAddress(ipAddress, getRandomElement(tcpPorts)), 1);
                 } catch (final IOException ignored) {}
 
-
                 // SMB - Connection
                 try {
                     new SmbFile("smb://" + ipAddress + "/WIRESHARK_SNIFFER.DETECTED", new NtlmPasswordAuthentication(null, "STOP_SNIFFING", "YOU_GOT_CAUGHT")).createNewFile();
