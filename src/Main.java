@@ -103,7 +103,7 @@ public class Main extends LoggingUtils {
 
                 if (specificIP.isEmpty()) specificIP = null;
 
-                new WiresharkFlood(null, -1);
+                new WiresharkFlood(specificIP, -1);
 
             // HTTP Get overload
             } else if (attackMode == 99) {
