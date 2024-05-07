@@ -3,12 +3,12 @@
     <output-path>$PROJECT_DIR$/out/artifacts/DoS_jar</output-path>
     <root id="archive" name="DoS.jar">
       <element id="module-output" name="DoS" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/out/artifacts/DoS_jar/DoS.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/libs/jcifs-1.3.17.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/libs/super-user-application-0.0.5.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/libs/jna-5.13.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/libs/jna-platform-5.13.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/libs/jnetpcap-1.5.r1457-1i.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/out/artifacts/DoS_jar/DoS.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
