@@ -176,7 +176,7 @@ public class SnifferFucker extends LoggingUtils {
                             if (InetAddress.getByName("192.168.1." + finalI).isReachable(NetworkInterface.getByName(interfaceIP), 64, 3000) && checkPort("192.168.1." + finalI, 135) && checkPort("192.168.1." + finalI, 139) && checkPort("192.168.1." + finalI, 445) && !checkPort("192.168.1." + finalI, 53)) {
                                 violations.put("192.168.1." + finalI, violations.get("192.168.1." + finalI) + 1);
 
-                                if (violations.get("192.168.1." + finalI) >= 5) {
+                                if (violations.get("192.168.1." + finalI) >= 12) {
                                     alert_high("192.168.1." + finalI + " has answered an invalid packet!" + "\n" + BLACK_BRIGHT + ITALIC + "||||| CHECK_TYPE=ARP, FLAG=IMPOSSIBLE_RESPONSE, DEST_NIC=PROMISCUOUS, DEST_CLIENT=WINDOWS(135+139+445), VL=" + violations.get("192.168.1." + finalI) + ", LATENCY=" + (System.currentTimeMillis() - delayPing) + "ms, TTL=64, TIMEOUT=3000 @ " + new SimpleDateFormat("yyyy/dd/MM HH:mm:ss").format(Calendar.getInstance().getTime()));
                                 }
 
@@ -192,7 +192,7 @@ public class SnifferFucker extends LoggingUtils {
                                 }
 
                             } else if (violations.get("192.168.1." + finalI) > 0) {
-                                if (violations.get("192.168.1." + finalI) >= 5) {
+                                if (violations.get("192.168.1." + finalI) >= 12) {
                                     alert_medium("192.168.1." + finalI + " has suspectedly stopped answering." + "\n" + BLACK_BRIGHT + ITALIC + "||||| CHECK_TYPE=ARP, FLAG=PROPER_RESPONSE_AFTER_IMPOSSIBLE_RESPONSE, DEST_NIC=NORMAL, DEST_CLIENT=UNKNOWN, VL=" + violations.get("192.168.1." + finalI) + ", LATENCY=" + (System.currentTimeMillis() - delayPing) + "ms, TTL=64, TIMEOUT=30000 @ " + new SimpleDateFormat("yyyy/dd/MM HH:mm:ss").format(Calendar.getInstance().getTime()));
                                 }
 
