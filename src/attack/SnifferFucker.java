@@ -100,6 +100,8 @@ public class SnifferFucker extends LoggingUtils {
 
         new File("getName.bat").delete();
 
+        final int vlBuffer = Integer.parseInt(getUserInput("After how many flags should we display the alert ? (buffer): "));
+
         final int vlCapFlood = Integer.parseInt(getUserInput("At which VL should we flood the sniffer ? (-1 to disable, 20 recommended): "));
 
         log("clearing arp cache...");
@@ -130,7 +132,7 @@ public class SnifferFucker extends LoggingUtils {
                 "$byteOut[0-3] = 0\n" +
                 "$Socket = New-Object System.Net.Sockets.Socket([Net.Sockets.AddressFamily]::InterNetwork, [Net.Sockets.SocketType]::Raw, [Net.Sockets.ProtocolType]::IP)\n" +
                 "$Socket.SetSocketOption(\"IP\", \"HeaderIncluded\", $true)\n" +
-                "$Socket.ReceiveBufferSize = 512000\n" +
+                "$Socket.ReceiveBufferSize = 8192\n" +
                 "$Endpoint = New-Object System.Net.IPEndpoint([Net.IPAddress]\"" + interfaceIP + "\", 0)\n" +
                 "$Socket.Bind($Endpoint)\n" +
                 "[void]$Socket.IOControl([Net.Sockets.IOControlCode]::ReceiveAll, $byteIn, $byteOut)\n" +
@@ -142,7 +144,7 @@ public class SnifferFucker extends LoggingUtils {
 
         new ProcessBuilder(
                 "powershell.exe",
-                "Start-Process powershell.exe -ExecutionPolicy Bypass -WindowStyle hidden '-NoExit \"[Console]::Title = ''PromiscuousMode''; .\\promiscuous.ps1\"'"
+                "Start-Process powershell.exe -WindowStyle hidden '-NoExit \"[Console]::Title = ''PromiscuousMode''; .\\promiscuous.ps1\"'"
         ).start();
 
         Thread.sleep(2000);
@@ -176,7 +178,7 @@ public class SnifferFucker extends LoggingUtils {
                             if (InetAddress.getByName("192.168.1." + finalI).isReachable(NetworkInterface.getByName(interfaceIP), 64, 1) && checkPort("192.168.1." + finalI, 135) && checkPort("192.168.1." + finalI, 139) && checkPort("192.168.1." + finalI, 445) && !checkPort("192.168.1." + finalI, 53)) {
                                 violations.put("192.168.1." + finalI, violations.get("192.168.1." + finalI) + 1);
 
-                                if (violations.get("192.168.1." + finalI) >= 8) {
+                                if (violations.get("192.168.1." + finalI) >= vlBuffer) {
                                     alert_high("192.168.1." + finalI + " has answered an invalid packet!" + "\n" + BLACK_BRIGHT + ITALIC + "||||| CHECK_TYPE=ARP, FLAG=IMPOSSIBLE_RESPONSE, DEST_NIC=PROMISCUOUS, DEST_CLIENT=WINDOWS(135+139+445), VL=" + violations.get("192.168.1." + finalI) + ", LATENCY=" + (System.currentTimeMillis() - delayPing) + "ms, TTL=64, TIMEOUT=3000 @ " + new SimpleDateFormat("yyyy/dd/MM HH:mm:ss").format(Calendar.getInstance().getTime()));
                                 }
 
@@ -192,7 +194,7 @@ public class SnifferFucker extends LoggingUtils {
                                 }
 
                             } else if (violations.get("192.168.1." + finalI) > 0) {
-                                if (violations.get("192.168.1." + finalI) >= 8) {
+                                if (violations.get("192.168.1." + finalI) >= vlBuffer) {
                                     alert_medium("192.168.1." + finalI + " has suspectedly stopped answering." + "\n" + BLACK_BRIGHT + ITALIC + "||||| CHECK_TYPE=ARP, FLAG=PROPER_RESPONSE_AFTER_IMPOSSIBLE_RESPONSE, DEST_NIC=NORMAL, DEST_CLIENT=UNKNOWN, VL=" + violations.get("192.168.1." + finalI) + ", LATENCY=" + (System.currentTimeMillis() - delayPing) + "ms, TTL=64, TIMEOUT=30000 @ " + new SimpleDateFormat("yyyy/dd/MM HH:mm:ss").format(Calendar.getInstance().getTime()));
                                 }
 
