@@ -1,5 +1,6 @@
-package attack;
+package attack.sniffer;
 
+import attack.WiresharkFlood;
 import utils.LoggingUtils;
 
 import java.io.File;
@@ -15,9 +16,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class SnifferFucker extends LoggingUtils {
+public class ARP extends LoggingUtils {
 
-    public SnifferFucker() throws IOException, InterruptedException {
+    public ARP() throws IOException, InterruptedException {
 
         System.out.println(RED + "/!\\ ATTENTION REQUIRED /!\\");
         System.out.println(RED_BRIGHT + "   This mode will erase and poison the ARP cache of one of your network interfaces,");
@@ -175,7 +176,7 @@ public class SnifferFucker extends LoggingUtils {
                         try {
                             final long delayPing =  System.currentTimeMillis();
 
-                            if (InetAddress.getByName("192.168.1." + finalI).isReachable(NetworkInterface.getByName(interfaceIP), 64, 1) && checkPort("192.168.1." + finalI, 135) && checkPort("192.168.1." + finalI, 139) && checkPort("192.168.1." + finalI, 445) && !checkPort("192.168.1." + finalI, 53)) {
+                            if (InetAddress.getByName("192.168.1." + finalI).isReachable(NetworkInterface.getByName(interfaceIP), 128, 5000) && checkPort("192.168.1." + finalI, 135) && checkPort("192.168.1." + finalI, 139) && checkPort("192.168.1." + finalI, 445) && !checkPort("192.168.1." + finalI, 53)) {
                                 violations.put("192.168.1." + finalI, violations.get("192.168.1." + finalI) + 1);
 
                                 if (violations.get("192.168.1." + finalI) >= vlBuffer) {
@@ -208,6 +209,8 @@ public class SnifferFucker extends LoggingUtils {
                     }, executorService);
                     futures.add(future);
                 }
+
+                Thread.sleep(10000);
             }
 
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();

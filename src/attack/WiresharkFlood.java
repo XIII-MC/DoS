@@ -6,16 +6,14 @@ import utils.LoggingUtils;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class WiresharkFlood extends LoggingUtils {
 
-    final List<Integer> udpPorts = Arrays.asList(500, 4500, 1194, 123, 53, 67, 68, 5355, 137, 138);
-    // In order: L2TP/IPSec/IKEv2 (x2), OpenVPN, NTP, DNS, DHCP (x2), LLMNR, NBS, BROWSER
+    final List<Integer> udpPorts = Arrays.asList(500, 4500, 1194, 123, 53, 67, 68, 5355, 137, 138, 587);
+    // In order: L2TP/IPSec/IKEv2 (x2), OpenVPN, NTP, DNS, DHCP (x2), LLMNR, NBS, BROWSER, IMAP
 
     final List<Integer> tcpPorts = Arrays.asList(445, 80, 443, 22, 25, 23, 143, 3389, 110);
     // In order: SMB, HTTP, HTTPS, SSH, SMTP, TELNET, IMAP, RDP, POP3

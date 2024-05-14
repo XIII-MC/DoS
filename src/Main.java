@@ -1,6 +1,7 @@
 import attack.*;
+import attack.sniffer.ARP;
+import attack.sniffer.PingDrop;
 import utils.LoggingUtils;
-import utils.TestAdmin;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -91,7 +92,7 @@ public class Main extends LoggingUtils {
 
                 log("starting sniffer fucker...");
 
-                new SnifferFucker();
+                new ARP();
 
             } else if (attackMode == 5) {
 
@@ -104,6 +105,10 @@ public class Main extends LoggingUtils {
                 if (specificIP.isEmpty()) specificIP = null;
 
                 new WiresharkFlood(specificIP, -1);
+
+            } else if (attackMode == 96) {
+
+                new PingDrop();
 
             // HTTP Get overload
             } else if (attackMode == 99) {
