@@ -176,22 +176,54 @@ public class ARP extends LoggingUtils {
                         try {
                             final long delayPing =  System.currentTimeMillis();
 
-                            if (InetAddress.getByName("192.168.1." + finalI).isReachable(NetworkInterface.getByName(interfaceIP), 128, 5000) && checkPort("192.168.1." + finalI, 135) && checkPort("192.168.1." + finalI, 139) && checkPort("192.168.1." + finalI, 445) && !checkPort("192.168.1." + finalI, 53)) {
-                                violations.put("192.168.1." + finalI, violations.get("192.168.1." + finalI) + 1);
+                            if (InetAddress.getByName("192.168.1." + finalI).isReachable(NetworkInterface.getByName(interfaceIP), 1, 1) && checkPort("192.168.1." + finalI, 135) && checkPort("192.168.1." + finalI, 139) && checkPort("192.168.1." + finalI, 445) && !checkPort("192.168.1." + finalI, 53)) {
 
-                                if (violations.get("192.168.1." + finalI) >= vlBuffer) {
-                                    alert_high("192.168.1." + finalI + " has answered an invalid packet!" + "\n" + BLACK_BRIGHT + ITALIC + "||||| CHECK_TYPE=ARP, FLAG=IMPOSSIBLE_RESPONSE, DEST_NIC=PROMISCUOUS, DEST_CLIENT=WINDOWS(135+139+445), VL=" + violations.get("192.168.1." + finalI) + ", LATENCY=" + (System.currentTimeMillis() - delayPing) + "ms, TTL=64, TIMEOUT=3000 @ " + new SimpleDateFormat("yyyy/dd/MM HH:mm:ss").format(Calendar.getInstance().getTime()));
-                                }
+                                Thread.sleep(1000);
 
-                                // WireShark flood sniffer
-                                if (vlCapFlood != -1 && violations.get("192.168.1." + finalI) >= vlCapFlood && floodThreads.get("192.168.1." + finalI) == null) {
-                                    final Thread floodThread = new Thread(() -> {
-                                        try {
-                                            new WiresharkFlood("192.168.1." + finalI, 0);
-                                        } catch (IOException | InterruptedException ignored) {}
-                                    });
-                                    floodThreads.put("192.168.1." + finalI, floodThread);
-                                    floodThread.start();
+                                if (InetAddress.getByName("192.168.1." + finalI).isReachable(NetworkInterface.getByName(interfaceIP), 1, 1) && checkPort("192.168.1." + finalI, 135) && checkPort("192.168.1." + finalI, 139) && checkPort("192.168.1." + finalI, 445) && !checkPort("192.168.1." + finalI, 53)) {
+
+                                    Thread.sleep(1000);
+
+                                    if (InetAddress.getByName("192.168.1." + finalI).isReachable(NetworkInterface.getByName(interfaceIP), 1, 1) && checkPort("192.168.1." + finalI, 135) && checkPort("192.168.1." + finalI, 139) && checkPort("192.168.1." + finalI, 445) && !checkPort("192.168.1." + finalI, 53)) {
+
+                                        violations.put("192.168.1." + finalI, violations.get("192.168.1." + finalI) + 1);
+
+                                        if (violations.get("192.168.1." + finalI) >= vlBuffer) {
+                                            alert_high("192.168.1." + finalI + " has answered an invalid packet!" + "\n" + BLACK_BRIGHT + ITALIC + "||||| CHECK_TYPE=ARP, FLAG=IMPOSSIBLE_RESPONSE, DEST_NIC=PROMISCUOUS, DEST_CLIENT=WINDOWS(135+139+445), VL=" + violations.get("192.168.1." + finalI) + ", LATENCY=" + (System.currentTimeMillis() - delayPing) + "ms, TTL=64, TIMEOUT=3000 @ " + new SimpleDateFormat("yyyy/dd/MM HH:mm:ss").format(Calendar.getInstance().getTime()));
+                                        }
+
+                                        // WireShark flood sniffer
+                                        if (vlCapFlood != -1 && violations.get("192.168.1." + finalI) >= vlCapFlood && floodThreads.get("192.168.1." + finalI) == null) {
+                                            final Thread floodThread = new Thread(() -> {
+                                                try {
+                                                    new WiresharkFlood("192.168.1." + finalI, 0);
+                                                } catch (IOException | InterruptedException ignored) {}
+                                            });
+                                            floodThreads.put("192.168.1." + finalI, floodThread);
+                                            floodThread.start();
+                                        }
+
+                                    } else if (violations.get("192.168.1." + finalI) > 0) {
+                                        if (violations.get("192.168.1." + finalI) >= vlBuffer) {
+                                            alert_medium("192.168.1." + finalI + " has suspectedly stopped answering." + "\n" + BLACK_BRIGHT + ITALIC + "||||| CHECK_TYPE=ARP, FLAG=PROPER_RESPONSE_AFTER_IMPOSSIBLE_RESPONSE, DEST_NIC=NORMAL, DEST_CLIENT=UNKNOWN, VL=" + violations.get("192.168.1." + finalI) + ", LATENCY=" + (System.currentTimeMillis() - delayPing) + "ms, TTL=64, TIMEOUT=30000 @ " + new SimpleDateFormat("yyyy/dd/MM HH:mm:ss").format(Calendar.getInstance().getTime()));
+                                        }
+
+                                        violations.put("192.168.1." + finalI, 0);
+                                        if (vlCapFlood != -1 && floodThreads.get("192.168.1." + finalI) != null) {
+                                            floodThreads.get("192.168.1." + finalI).interrupt();
+                                            floodThreads.remove("192.168.1." + finalI);
+                                        }
+                                    }
+                                } else if (violations.get("192.168.1." + finalI) > 0) {
+                                    if (violations.get("192.168.1." + finalI) >= vlBuffer) {
+                                        alert_medium("192.168.1." + finalI + " has suspectedly stopped answering." + "\n" + BLACK_BRIGHT + ITALIC + "||||| CHECK_TYPE=ARP, FLAG=PROPER_RESPONSE_AFTER_IMPOSSIBLE_RESPONSE, DEST_NIC=NORMAL, DEST_CLIENT=UNKNOWN, VL=" + violations.get("192.168.1." + finalI) + ", LATENCY=" + (System.currentTimeMillis() - delayPing) + "ms, TTL=64, TIMEOUT=30000 @ " + new SimpleDateFormat("yyyy/dd/MM HH:mm:ss").format(Calendar.getInstance().getTime()));
+                                    }
+
+                                    violations.put("192.168.1." + finalI, 0);
+                                    if (vlCapFlood != -1 && floodThreads.get("192.168.1." + finalI) != null) {
+                                        floodThreads.get("192.168.1." + finalI).interrupt();
+                                        floodThreads.remove("192.168.1." + finalI);
+                                    }
                                 }
 
                             } else if (violations.get("192.168.1." + finalI) > 0) {
@@ -205,12 +237,10 @@ public class ARP extends LoggingUtils {
                                     floodThreads.remove("192.168.1." + finalI);
                                 }
                             }
-                        } catch (final IOException ignored) {}
+                        } catch (final IOException | InterruptedException ignored) {}
                     }, executorService);
                     futures.add(future);
                 }
-
-                Thread.sleep(10000);
             }
 
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
