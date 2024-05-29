@@ -124,7 +124,7 @@ public class ARP extends LoggingUtils {
         long pid = ProcessHandle.current().pid();
 
         final FileWriter promiscuousModeFileWriter = new FileWriter("promiscuous.ps1");
-        promiscuousModeFileWriter.write("$(Get-NetAdapter -Name \"" + interfaceName + "\").PromiscuousMode\n" +
+        promiscuousModeFileWriter.write("$(Get-NetAdapter -Name '" + interfaceName + "').PromiscuousMode\n" +
                 "$byteIn = New-Object Byte[] 4\n" +
                 "$byteOut = New-Object Byte[] 4\n" +
                 "$byteData = New-Object Byte[] 4096\n" +
@@ -137,7 +137,7 @@ public class ARP extends LoggingUtils {
                 "$Endpoint = New-Object System.Net.IPEndpoint([Net.IPAddress]\"" + interfaceIP + "\", 0)\n" +
                 "$Socket.Bind($Endpoint)\n" +
                 "[void]$Socket.IOControl([Net.Sockets.IOControlCode]::ReceiveAll, $byteIn, $byteOut)\n" +
-                "$(Get-NetAdapter -Name \"" + interfaceName + "\").PromiscuousMode\n" +
+                "$(Get-NetAdapter -Name '" + interfaceName + "').PromiscuousMode\n" +
                 "Wait-Process -Id " + pid + "\n" +
                 "netsh interface IP delete arpcache\n" +
                 "taskkill /F /PID ([System.Diagnostics.Process]::GetCurrentProcess().Id)");
@@ -145,7 +145,7 @@ public class ARP extends LoggingUtils {
 
         new ProcessBuilder(
                 "powershell.exe",
-                "Start-Process powershell.exe -WindowStyle hidden '-NoExit \"[Console]::Title = ''PromiscuousMode''; .\\promiscuous.ps1\"'"
+                "Start-Process powershell.exe '-NoExit \"[Console]::Title = ''PromiscuousMode''; .\\promiscuous.ps1\"'"
         ).start();
 
         Thread.sleep(2000);

